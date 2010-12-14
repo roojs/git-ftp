@@ -168,7 +168,7 @@ upload_file() {
 	fi
  
 	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
-	if [ "$REMOTE_USER" = "" ]
+	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS=""
 	fi
 	
@@ -191,7 +191,7 @@ upload_file() {
 remove_file() {
 	FILENAME="$1"
 	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
-	if [ "$REMOTE_USER" = "" ]
+	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS=""
 	fi
 	curl -n $REMOTE_CMD_OPTIONS $USERPASS -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
@@ -200,7 +200,7 @@ remove_file() {
 get_file_content() {
 	SRC_FILE="$1"
 	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
-	if [ "$REMOTE_USER" = "" ]
+	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS=""
 	fi
 	curl -n $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
