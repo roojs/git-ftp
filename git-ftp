@@ -61,6 +61,7 @@ DESCRIPTION
 
 	It remembers the deployed state by uploading the SHA1 in a log file.
 
+	You can store user/pass in .netrc, or use git config
 
 ACTIONS
 	. push
@@ -88,13 +89,13 @@ URL
 
 OPTIONS
 	-h, --help	Show this help
-	-u, --user	FTP login name
+	-u, --user	FTP login name 
 	-p, --passwd	FTP password
 	-D, --dry-run	Dry run: Does not upload anything
 	-a, --all	Uploads all files, ignores deployed SHA1 hash
 	-l, --lock	Enable/Disable remote locking
 	-f, --force	Force, does not ask questions
-	-v, --verbose	Verbose
+	-v, --verbose	Verbose (Use twice to show curl verbose messages)
 	--version	Prints version
 
 
@@ -137,12 +138,12 @@ check_exit_status() {
 
 # Simple log func
 write_log() {
-	[ $VERBOSE -eq 1 ] && echo "`date`: $1"
+	[ $VERBOSE -gt 0 ] && echo "`date`: $1"
 }
 
 # Simple error writer
 write_error_and_die() {
-	if [ $VERBOSE -eq 0 ]; then
+	if [ $VERBOSE -lt 1 ]; then
 		echo "fatal: $1"
 	else
 		write_log "fatal: $1"
@@ -153,7 +154,7 @@ write_error_and_die() {
 
 # Simple info writer
 write_info() {
-	if [ $VERBOSE -eq 0 ]; then
+	if [ $VERBOSE -lt 1 ]; then
 		echo "$1"
 	else
 		write_log "$1"
@@ -392,7 +393,10 @@ do
 			write_log "Running dry, won't do anything"
 			;;
 		-v|--verbose)
-			VERBOSE=1
+			VERBOSE=$(($VERBOSE+1))
+			if [ $VERBOSE -gt 1 ]; then
+				REMOTE_CMD_OPTIONS="$REMOTE_CMD_OPTIONS -v"
+			fi
 			;;
 		-f|--force)
 			FORCE=1
