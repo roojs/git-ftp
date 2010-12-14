@@ -166,17 +166,44 @@ upload_file() {
 	if [ -z $DEST_FILE ]; then
 		DEST_FILE=$SRC_FILE
 	fi
-	curl $REMOTE_CMD_OPTIONS -T $SRC_FILE --user $REMOTE_USER:$REMOTE_PASSWD --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}
+ 
+	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	if [ "$REMOTE_USER" = "" ]
+		USERPASS=""
+	fi
+	
+	if [ -h $SRC_FILE ]; then
+		DEST_LINK=$(ls -l $SRC_FILE | awk '{ print $11 }')
+		echo "curl -n  -Q -ln ${REMOTE_PATH}${DEST_FILE} $DEST_LINK $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1"
+		echo "LINKS NOT SUPPORTED?"
+	elif  [ -d $SRC_FILE ]; then
+		curl $REMOTE_CMD_OPTIONS  -n  $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
+	else
+		curl $REMOTE_CMD_OPTIONS  -n  $USERPASS -T "$SRC_FILE"  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}
+	fi
+	write_info "Uploaded"
+
+
+	
+	
 }
 
 remove_file() {
 	FILENAME="$1"
-	curl $REMOTE_CMD_OPTIONS --user $REMOTE_USER:$REMOTE_PASSWD -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
+	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	if [ "$REMOTE_USER" = "" ]
+		USERPASS=""
+	fi
+	curl -n $REMOTE_CMD_OPTIONS $USERPASS -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
 }
 
 get_file_content() {
 	SRC_FILE="$1"
-	curl $REMOTE_CMD_OPTIONS --user $REMOTE_USER:$REMOTE_PASSWD $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
+	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	if [ "$REMOTE_USER" = "" ]
+		USERPASS=""
+	fi
+	curl -n $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
 }
 
 upload_local_sha1() {
@@ -468,11 +495,14 @@ if [ $IGNORE_DEPLOYED -ne 1 ]; then
 	fi
 fi
 
+IS_DIFF="n"
+
 if [ "$DEPLOYED_SHA1" != "" ]; then
 	write_log "Last deployed SHA1 for $REMOTE_HOST/$REMOTE_PATH is $DEPLOYED_SHA1"
 
 	# Get the files changed since then
 	FILES_CHANGED="`git diff --name-status $DEPLOYED_SHA1 2>/dev/null`"
+	IS_DIFF="y"
 	if [ $? -ne 0 ]; then
 		if [ $FORCE -ne 1 ]; then
 			write_info "Unknown SHA1 object, make sure you are deploying the right branch and it is up-to-date."
@@ -484,11 +514,13 @@ if [ "$DEPLOYED_SHA1" != "" ]; then
 				exit 0
 			else
 				write_log "Taking all files";
-				FILES_CHANGED="`git ls-files`"
+				FILES_CHANGED="`git ls-files -t`"
+				IS_DIFF="n"
 			fi
 		else
 			write_info "Unknown SHA1 object, could not determine changed filed, taking all files"
-			FILES_CHANGED="`git ls-files`"
+			FILES_CHANGED="`git ls-files -t`"
+			IS_DIFF="n"
 		fi
 	elif [ "$FILES_CHANGED" != "" ]; then
 		write_log "Having changed files";
@@ -499,7 +531,7 @@ if [ "$DEPLOYED_SHA1" != "" ]; then
 	fi
 else
 	write_log "No last deployed SHA1 for $REMOTE_HOST/$REMOTE_PATH found or forced to take all files"
-	FILES_CHANGED="`git ls-files`"
+	FILES_CHANGED="`git ls-files -t`"
 fi
 
 # Calculate total file count
@@ -514,15 +546,22 @@ remote_lock
 # Changing internal field separator, file names could have spaces
 OIFS="$IFS"
 # dash does not like NIFS=$'\n', using WYSIWYG
-NIFS=$'
-'
+NIFS=`echo '$'`
 IFS="$NIFS"
 
 # Upload to ftp
-for FILE_ITERATOR in $FILES_CHANGED; do
+echo $FILES_CHANGED | while read FILE_ITERATOR; do
 	DONE_ITEMS=$(($DONE_ITEMS+1))
-	FILE_MODE=`echo "$FILE_ITERATOR" | cut -f 1`
-	FILE_NAME=`echo "$FILE_ITERATOR" | cut -f 2`
+	
+	if [ "$IS_DIFF" = "n" ]; then
+		FILE_MODE=`echo "$FILE_ITERATOR" | cut -f 1 -d ' '`
+		FILE_NAME=`echo "$FILE_ITERATOR" | cut -f 2 -d ' '`
+	else
+		FILE_MODE=`echo "$FILE_ITERATOR" | cut -f 1`
+		FILE_NAME=`echo "$FILE_ITERATOR" | cut -f 2`
+	fi
+
+	
 	if [ "$FILE_MODE" != "D"  ]; then
 		# Uploading file
 		write_info "[$DONE_ITEMS of $TOTAL_ITEMS] Uploading '$FILE_NAME'"
