@@ -23,7 +23,7 @@
 # General config
 DEFAULT_PROTOCOL="ftp"
 DEPLOYED_SHA1_FILE=".git-ftp.log"
-LCK_FILE="`basename $0`.lck"
+LCK_FILE=".git/`basename $0`.lck"
 REMOTE_LCK_FILE="`basename $0`.lck"
 
 # ------------------------------------------------------------
@@ -395,7 +395,7 @@ do
 		-v|--verbose)
 			VERBOSE=$(($VERBOSE+1))
 			if [ $VERBOSE -gt 1 ]; then
-				REMOTE_CMD_OPTIONS="$REMOTE_CMD_OPTIONS -v"
+				REMOTE_CMD_OPTIONS="-v"
 			fi
 			;;
 		-f|--force)
