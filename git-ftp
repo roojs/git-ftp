@@ -209,7 +209,26 @@ upload_file() {
 	if [ -z $DEST_FILE ]; then
 		DEST_FILE=$SRC_FILE
 	fi
-	curl $REMOTE_CMD_OPTIONS -T $SRC_FILE --user $REMOTE_USER:$REMOTE_PASSWD --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}
+ 
+	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	if [ "$REMOTE_USER" = "" ]; then
+		USERPASS=""
+	fi
+	
+	if [ -h $SRC_FILE ]; then
+		DEST_LINK=$(ls -l $SRC_FILE | awk '{ print $11 }')
+		echo "curl -n  -Q -ln ${REMOTE_PATH}${DEST_FILE} $DEST_LINK $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1"
+		echo "LINKS NOT SUPPORTED?"
+	elif  [ -d $SRC_FILE ]; then
+		curl $REMOTE_CMD_OPTIONS  -n  $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
+	else
+		curl $REMOTE_CMD_OPTIONS  -n  $USERPASS -T "$SRC_FILE"  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}
+	fi
+	write_info "Uploaded"
+
+
+	
+	
 }
 
 batch_upload_files() {
@@ -225,12 +244,20 @@ batch_upload_files() {
 
 remove_file() {
 	FILENAME="$1"
-	curl $REMOTE_CMD_OPTIONS -# --user $REMOTE_USER:$REMOTE_PASSWD -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
+	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	if [ "$REMOTE_USER" = "" ]; then
+		USERPASS=""
+	fi
+	curl -n $REMOTE_CMD_OPTIONS $USERPASS -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
 }
 
 get_file_content() {
 	SRC_FILE="$1"
-	curl $REMOTE_CMD_OPTIONS -# --user $REMOTE_USER:$REMOTE_PASSWD $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
+	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	if [ "$REMOTE_USER" = "" ]; then
+		USERPASS=""
+	fi
+	curl -n $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
 }
 
 upload_local_sha1() {
@@ -427,7 +454,7 @@ handle_remote_protocol_options() {
 	# Options for curl if using FTPES
 	[ "$REMOTE_PROTOCOL" = "ftpes" ] && REMOTE_CMD_OPTIONS="$REMOTE_CMD_OPTIONS --ftp-ssl -k"
 }
-
+ 
 handle_action() {
 	case "$ACTION" in
 		push)
@@ -448,8 +475,6 @@ handle_action() {
 set_remote_user() {
 	[ -z $REMOTE_USER ] && [ -n "$SCOPE" ] && REMOTE_USER="`git config --get git-ftp.$SCOPE.user`"
 	[ -z $REMOTE_USER ] && REMOTE_USER="`git config --get git-ftp.user`"
-	[ -z $REMOTE_USER ] && REMOTE_USER="$USER"
-	[ -z $REMOTE_USER ] && print_error_and_die "Remote user not set" $ERROR_MISSING_ARGUMENTS
 }
 
 set_remote_password() {
@@ -472,6 +497,7 @@ set_remotes() {
 	fi 
 
 	set_remote_protocol
+ 
 	# Add trailing slash if missing
 	if [ ! -z $REMOTE_PATH ] && [ `echo "$REMOTE_PATH" | egrep "*/$" | wc -l` -ne 1 ]; then
 		write_log "Added missing trailing / in path"
@@ -698,4 +724,6 @@ do
 	esac
 	shift
 done
+ 
 main
+ 
