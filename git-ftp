@@ -210,7 +210,7 @@ upload_file() {
 		DEST_FILE=$SRC_FILE
 	fi
  
-	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	USERPASS="--user '$REMOTE_USER:$REMOTE_PASSWD'"
         #if no remote user use netrc
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
@@ -218,7 +218,7 @@ upload_file() {
 	
 	if [ -h $SRC_FILE ]; then
 		DEST_LINK=$(ls -l $SRC_FILE | awk '{ print $11 }')
-		echo "curl -n  -Q -ln ${REMOTE_PATH}${DEST_FILE} $DEST_LINK $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1"
+		echo "curl -n -Q -ln ${REMOTE_PATH}${DEST_FILE} $DEST_LINK $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1"
 		echo "LINKS NOT SUPPORTED?"
 	elif  [ -d $SRC_FILE ]; then
                 print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -Q  '-mkd ${REMOTE_PATH}${DEST_FILE}' $REMOTE_PROTOCOL://$REMOTE_HOST"
@@ -248,7 +248,7 @@ batch_upload_files() {
 
 remove_file() {
 	FILENAME="$1"
-	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	USERPASS="--user '$REMOTE_USER:$REMOTE_PASSWD'"
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
@@ -257,7 +257,7 @@ remove_file() {
 
 get_file_content() {
 	SRC_FILE="$1"
-	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	USERPASS="--user '$REMOTE_USER:$REMOTE_PASSWD'"
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
