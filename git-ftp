@@ -710,7 +710,7 @@ do
 		-vv)
 			VERBOSE=1
 			echo $LOG_CACHE
-			REMOTE_CMD_OPTIONS=""
+			REMOTE_CMD_OPTIONS="-v"
 			;;
 		-f|--force)
 			FORCE=1
