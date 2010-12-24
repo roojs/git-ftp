@@ -222,10 +222,10 @@ upload_file() {
 		echo "LINKS NOT SUPPORTED?"
 	elif  [ -d $SRC_FILE ]; then
                 print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -Q  '-mkd ${REMOTE_PATH}${DEST_FILE}' $REMOTE_PROTOCOL://$REMOTE_HOST"
-		`curl $REMOTE_CMD_OPTIONS $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1`
+		`curl $REMOTE_CMD_OPTIONS $USERPASS -Q '-mkd ${REMOTE_PATH}${DEST_FILE}' $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1`
 	else
                 print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -T '$SRC_FILE'  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}"
-		`curl $REMOTE_CMD_OPTIONS $USERPASS -T "$SRC_FILE"  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}`
+		`curl $REMOTE_CMD_OPTIONS $USERPASS -T '$SRC_FILE'  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}`
 	fi
 	print_info "Uploaded"
 
