@@ -222,10 +222,10 @@ upload_file() {
 		echo "LINKS NOT SUPPORTED?"
 	elif  [ -d $SRC_FILE ]; then
                 print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -Q  '-mkd ${REMOTE_PATH}${DEST_FILE}' $REMOTE_PROTOCOL://$REMOTE_HOST"
-		`curl $REMOTE_CMD_OPTIONS $USERPASS -Q '-mkd ${REMOTE_PATH}${DEST_FILE}' $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1`
+		curl $REMOTE_CMD_OPTIONS $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
 	else
                 print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -T '$SRC_FILE'  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}"
-		`curl $REMOTE_CMD_OPTIONS $USERPASS -T '$SRC_FILE'  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}`
+		curl $REMOTE_CMD_OPTIONS $USERPASS -T "$SRC_FILE" --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}
 	fi
 	print_info "Uploaded"
 
@@ -233,7 +233,7 @@ upload_file() {
 	
 	
 }
-
+#not used 
 batch_upload_files() {
 	FILES_COMMA_SEPARATED="$1"
         echo $1;
@@ -248,7 +248,7 @@ batch_upload_files() {
 
 remove_file() {
 	FILENAME="$1"
-	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	USERPASS="-u $REMOTE_USER:$REMOTE_PASSWD"
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
@@ -257,7 +257,7 @@ remove_file() {
 
 get_file_content() {
 	SRC_FILE="$1"
-	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	USERPASS="-u $REMOTE_USER:$REMOTE_PASSWD"
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
