@@ -210,7 +210,7 @@ upload_file() {
 		DEST_FILE=$SRC_FILE
 	fi
  
-	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+	USERPASS="-u $REMOTE_USER:$REMOTE_PASSWD"
         #if no remote user use netrc
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
