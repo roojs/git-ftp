@@ -211,8 +211,9 @@ upload_file() {
 	fi
  
 	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
+        #if no remote user use netrc
 	if [ "$REMOTE_USER" = "" ]; then
-		USERPASS=""
+		USERPASS="-n"
 	fi
 	
 	if [ -h $SRC_FILE ]; then
@@ -220,9 +221,11 @@ upload_file() {
 		echo "curl -n  -Q -ln ${REMOTE_PATH}${DEST_FILE} $DEST_LINK $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1"
 		echo "LINKS NOT SUPPORTED?"
 	elif  [ -d $SRC_FILE ]; then
-		curl $REMOTE_CMD_OPTIONS  -n  $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
+                print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST"
+		curl $REMOTE_CMD_OPTIONS $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
 	else
-		curl $REMOTE_CMD_OPTIONS  -n  $USERPASS -T "$SRC_FILE"  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}
+                print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -Q "-mkd ${REMOTE_PATH}${DEST_FILE}" $REMOTE_PROTOCOL://$REMOTE_HOST"
+		curl $REMOTE_CMD_OPTIONS $USERPASS -T "$SRC_FILE"  --ftp-create-dirs -# $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${DEST_FILE}
 	fi
 	write_info "Uploaded"
 
@@ -233,6 +236,7 @@ upload_file() {
 
 batch_upload_files() {
 	FILES_COMMA_SEPARATED="$1"
+        echo $1;
 	if [ `echo "$FILES_COMMA_SEPARATED" | egrep "*,$" | wc -l` -ne 0 ]; then
 		FILES_COMMA_SEPARATED=`expr "$1" : "^\(.*\),$"`
 	fi
@@ -246,18 +250,18 @@ remove_file() {
 	FILENAME="$1"
 	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
 	if [ "$REMOTE_USER" = "" ]; then
-		USERPASS=""
+		USERPASS="-n"
 	fi
-	curl -n $REMOTE_CMD_OPTIONS $USERPASS -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
+	curl $REMOTE_CMD_OPTIONS $USERPASS -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1
 }
 
 get_file_content() {
 	SRC_FILE="$1"
 	USERPASS="--user $REMOTE_USER:$REMOTE_PASSWD"
 	if [ "$REMOTE_USER" = "" ]; then
-		USERPASS=""
+		USERPASS="-n"
 	fi
-	curl -n $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
+	curl $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
 }
 
 upload_local_sha1() {
@@ -416,36 +420,35 @@ handle_file_sync() {
 	TOTAL_ITEMS=$((TOTAL_ITEMS+0)) # trims whitespaces produced by wc
 	write_log "There are $TOTAL_ITEMS files to upload"
 
-	UPLOAD_FILES=""
-	if [ "$MODE" = "all-files" ]; then
-		UPLOAD_FILES=`echo "$FILES_CHANGED" |  tr '\n' ','`
-	else
-		# Changing internal field separator, file names could have spaces
-		OIFS="$IFS"
-		# dash does not like NIFS=$'\n', using WYSIWYG
-		NIFS=$'
+ 
+	OIFS="$IFS"
+	# dash does not like NIFS=$'\n', using WYSIWYG
+	NIFS=$'
 '
-		IFS="$NIFS"
-		for FILE_ITERATOR in $FILES_CHANGED; do
-			DONE_ITEMS=$(($DONE_ITEMS+1))
-			FILE_MODE=`echo "$FILE_ITERATOR" | cut -f 1`
-			FILE_NAME=`echo "$FILE_ITERATOR" | cut -f 2`
-			if [ "$FILE_MODE" != "D"  ]; then
-				print_info "[$DONE_ITEMS of $TOTAL_ITEMS] Keep '$FILE_NAME' for batch upload"
-				UPLOAD_FILES="$FILE_NAME,$UPLOAD_FILES"
-			else
-				# Removing file
-				print_info "[$DONE_ITEMS of $TOTAL_ITEMS] Removing '$FILE_NAME'"
-				[ $DRY_RUN -ne 1 ] && remove_file $FILE_NAME
-			fi
-		done
-		IFS="$OIFS"
-	fi
+	IFS="$NIFS"
+	for FILE_ITERATOR in $FILES_CHANGED; do
+		DONE_ITEMS=$(($DONE_ITEMS+1))
+                if [ "$MODE" = "all-files" ]; then
+                        FILE_NAME=`echo "$FILE_ITERATOR"`
+                        FILE_MODE="A"
+                else 
+        		FILE_MODE=`echo "$FILE_ITERATOR" | cut -f 1`
+	        	FILE_NAME=`echo "$FILE_ITERATOR" | cut -f 2`
+                fi
 
-	# Batch upload to ftp
-	if [ $DRY_RUN -ne 1 ] && [ -n "$UPLOAD_FILES" ]; then
-		batch_upload_files "$UPLOAD_FILES"
-	fi
+		if [ "$FILE_MODE" != "D"  ]; then
+			print_info "[$DONE_ITEMS of $TOTAL_ITEMS] Sending '$FILE_NAME' for upload"
+                        [ $DRY_RUN -ne 1 ] && upload_file $FILE_NAME
+ 
+		else
+			# Removing file
+			print_info "[$DONE_ITEMS of $TOTAL_ITEMS] Removing '$FILE_NAME'"
+			[ $DRY_RUN -ne 1 ] && remove_file $FILE_NAME
+		fi
+	done
+	IFS="$OIFS"
+	
+	 
 }
 
 handle_remote_protocol_options() {
@@ -472,7 +475,7 @@ handle_action() {
 	esac
 }
 
-set_remote_user() {
+set_remote_--() {
 	[ -z $REMOTE_USER ] && [ -n "$SCOPE" ] && REMOTE_USER="`git config --get git-ftp.$SCOPE.user`"
 	[ -z $REMOTE_USER ] && REMOTE_USER="`git config --get git-ftp.user`"
 }
