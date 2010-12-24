@@ -475,7 +475,7 @@ handle_action() {
 	esac
 }
 
-set_remote_--() {
+set_remote_user() {
 	[ -z $REMOTE_USER ] && [ -n "$SCOPE" ] && REMOTE_USER="`git config --get git-ftp.$SCOPE.user`"
 	[ -z $REMOTE_USER ] && REMOTE_USER="`git config --get git-ftp.user`"
 }
