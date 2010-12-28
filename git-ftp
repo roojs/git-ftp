@@ -279,7 +279,6 @@ upload_local_sha1() {
 remote_lock() {
 	[ $ENABLE_REMOTE_LCK -ne 1 ] && return
 	[ $FORCE -ne 1 ] && check_remote_lock
--
 	LOCAL_HOSTNAME="`hostname --fqdn`"
 	DATE_UTC="`date --utc --rfc-2822`"
 	lLCK_MESSAGE="${USER}@${LOCAL_HOSTNAME} on $DATE_UTC"
