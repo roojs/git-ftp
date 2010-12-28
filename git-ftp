@@ -252,6 +252,7 @@ remove_file() {
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
+        [ $VERBOSE -eq 1 ] && print_info "curl $REMOTE_CMD_OPTIONS $USERPASS -Q '${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}' $REMOTE_PROTOCOL://$REMOTE_HOST"
 	`curl $REMOTE_CMD_OPTIONS $USERPASS -Q "${REMOTE_DELETE_CMD}${REMOTE_PATH}${FILENAME}" $REMOTE_PROTOCOL://$REMOTE_HOST > /dev/null 2>&1`
 }
 
@@ -261,6 +262,7 @@ get_file_content() {
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
+        [ $VERBOSE -eq 1 ] && print_info "curl $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}"
 	`curl $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}`
 }
 
@@ -277,7 +279,7 @@ upload_local_sha1() {
 remote_lock() {
 	[ $ENABLE_REMOTE_LCK -ne 1 ] && return
 	[ $FORCE -ne 1 ] && check_remote_lock
-
+-
 	LOCAL_HOSTNAME="`hostname --fqdn`"
 	DATE_UTC="`date --utc --rfc-2822`"
 	lLCK_MESSAGE="${USER}@${LOCAL_HOSTNAME} on $DATE_UTC"
