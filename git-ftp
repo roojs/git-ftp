@@ -262,8 +262,8 @@ get_file_content() {
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
-        #this has to be quiet...
-        [ $VERBOSE -eq 1 ] && print_info "curl -s $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}"
+        #this has to be quiet... - we can not even add debugging code here..
+         
 	curl -s $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
 }
 
