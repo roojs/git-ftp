@@ -262,8 +262,9 @@ get_file_content() {
 	if [ "$REMOTE_USER" = "" ]; then
 		USERPASS="-n"
 	fi
-        print_info "curl $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}"
-	curl $REMOTE_CMD_OPTIONS $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}
+        #this has to be quiet...
+        [ $VERBOSE -eq 1 ] && print_info "curl -s $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}"
+	`curl -s $USERPASS  $REMOTE_PROTOCOL://$REMOTE_HOST/${REMOTE_PATH}${SRC_FILE}`
 }
 
 upload_local_sha1() {
